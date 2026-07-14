@@ -25,6 +25,9 @@ htmlcov/
 *.key
 *.crt
 
+# Personal learning notes — kept local, not pushed (for now)
+notes/
+
 # Editor / OS
 .vscode/
 .idea/
