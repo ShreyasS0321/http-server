@@ -5,13 +5,27 @@ import threading
 def main() -> None:
     
     def handle_connection(client_socket,addr):
-        
-        
-        while True:
+
+        buffer=b""
+        # Read until we have the request line's terminating CRLF.
+        while b"\r\n" not in buffer:
             data=client_socket.recv(4096)
             if not data:
-                break
-            client_socket.sendall(data)
+                # Client hung up before sending a full request line.
+                client_socket.close()
+                return
+            buffer+=data
+
+        request_line_bytes, remaining_bytes = buffer.split(b"\r\n", 1)
+        request_line_text = request_line_bytes.decode('latin-1')
+        parts = request_line_text.split(" ")
+
+        if len(parts) == 3:
+            method, path, version = parts
+            print(f"[{addr}] method={method} path={path} version={version}")
+        else:
+            print(f"[{addr}] malformed request line: {request_line_text!r}")
+
         client_socket.close()
             
     server_socket=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
