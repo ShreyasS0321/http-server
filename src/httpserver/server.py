@@ -20,11 +20,20 @@ def main() -> None:
         request_line_text = header_lines[0].decode('latin-1')
         parts = request_line_text.split(" ")
 
-        if len(parts) == 3:
-            method, path, version = parts
-            print(f"[{addr}] method={method} path={path} version={version}")
-        else:
+        if len(parts) != 3:
             print(f"[{addr}] malformed request line: {request_line_text!r}")
+            body = b"<h1>400 Bad Request</h1>"
+            headers = "HTTP/1.1 400 Bad Request\r\n"
+            headers += "Content-Type: text/html\r\n"
+            headers += f"Content-Length: {len(body)}\r\n"
+            headers += "Connection: close\r\n"
+            headers += "\r\n"
+            client_socket.sendall(headers.encode("latin-1") + body)
+            client_socket.close()
+            return
+
+        method, path, version = parts
+        print(f"[{addr}] method={method} path={path} version={version}")
 
         request_headers = {}
         for line in header_lines[1:]:
