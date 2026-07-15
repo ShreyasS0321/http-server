@@ -7,17 +7,17 @@ def main() -> None:
     def handle_connection(client_socket,addr):
 
         buffer=b""
-        # Read until we have the request line's terminating CRLF.
-        while b"\r\n" not in buffer:
+        while b"\r\n\r\n" not in buffer:
             data=client_socket.recv(4096)
             if not data:
-                # Client hung up before sending a full request line.
                 client_socket.close()
                 return
             buffer+=data
 
-        request_line_bytes, remaining_bytes = buffer.split(b"\r\n", 1)
-        request_line_text = request_line_bytes.decode('latin-1')
+        header_block, body_bytes = buffer.split(b"\r\n\r\n", 1)
+        header_lines = header_block.split(b"\r\n")
+
+        request_line_text = header_lines[0].decode('latin-1')
         parts = request_line_text.split(" ")
 
         if len(parts) == 3:
@@ -25,6 +25,16 @@ def main() -> None:
             print(f"[{addr}] method={method} path={path} version={version}")
         else:
             print(f"[{addr}] malformed request line: {request_line_text!r}")
+
+        request_headers = {}
+        for line in header_lines[1:]:
+            name, sep, value = line.partition(b":")
+            if not sep:
+                continue
+            key = name.decode('latin-1').strip().lower()
+            request_headers[key] = value.decode('latin-1').strip()
+
+        print(f"[{addr}] headers: {request_headers}")
         
         body = b"<h1>Hello from my custom server!</h1>"
 
