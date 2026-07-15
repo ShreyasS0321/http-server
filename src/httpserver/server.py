@@ -25,7 +25,18 @@ def main() -> None:
             print(f"[{addr}] method={method} path={path} version={version}")
         else:
             print(f"[{addr}] malformed request line: {request_line_text!r}")
+        
+        body = b"<h1>Hello from my custom server!</h1>"
 
+        headers = "HTTP/1.1 200 OK\r\n"
+        headers += "Content-Type: text/html\r\n"
+        headers += f"Content-Length: {len(body)}\r\n"
+        headers += "Connection: close\r\n"
+        headers += "\r\n"
+
+        response = headers.encode("latin-1") + body
+
+        client_socket.sendall(response)
         client_socket.close()
             
     server_socket=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
