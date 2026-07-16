@@ -1,18 +1,28 @@
 import socket
 import threading
 from httpserver.request import Request
+from httpserver.response import Response
 
 handlers={}
 path_dict={}
 def add_route(path,method,function)->None:
-    
+
     handlers[(path,method)]=function
-    
+
     if path not in path_dict:
         path_dict[path]=set()
     path_dict[path].add(method)
-    
-    
+
+
+def send(client_socket, response):
+    client_socket.sendall(response.to_bytes())
+    client_socket.close()
+
+
+def error_response(status):
+    return Response(status, f"<h1>{status}</h1>")
+
+
 def run() -> None:
 
     def handle_connection(client_socket,addr):
@@ -33,36 +43,18 @@ def run() -> None:
 
         if len(parts) != 3:
             print(f"[{addr}] malformed request line: {request_line_text!r}")
-            body = b"<h1>400 Bad Request</h1>"
-            headers = "HTTP/1.1 400 Bad Request\r\n"
-            headers += "Content-Type: text/html\r\n"
-            headers += f"Content-Length: {len(body)}\r\n"
-            headers += "Connection: close\r\n"
-            headers += "\r\n"
-            client_socket.sendall(headers.encode("latin-1") + body)
-            client_socket.close()
+            send(client_socket, error_response("400 Bad Request"))
             return
 
         method, path, version = parts
-        
-        if (path,method ) not in handlers:
 
+        if (path,method) not in handlers:
             if path in path_dict:
-                status = "405 Method Not Allowed"
+                send(client_socket, error_response("405 Method Not Allowed"))
             else:
-                status = "404 Not Found"
-
-            body = f"<h1>{status}</h1>".encode("latin-1")
-            headers = f"HTTP/1.1 {status}\r\n"
-            headers += "Content-Type: text/html\r\n"
-            headers += f"Content-Length: {len(body)}\r\n"
-            headers += "Connection: close\r\n"
-            headers += "\r\n"
-            response = headers.encode("latin-1") + body
-
-            client_socket.sendall(response)
-            client_socket.close()
+                send(client_socket, error_response("404 Not Found"))
             return
+
         request_headers = {}
         for line in header_lines[1:]:
             name, sep, value = line.partition(b":")
@@ -72,7 +64,7 @@ def run() -> None:
             request_headers[key] = value.decode('latin-1').strip()
 
         print(f"[{addr}] headers: {request_headers}")
-        
+
         handler= handlers[(path,method)]
         request = Request(method, path, request_headers, body_bytes)
 
@@ -80,28 +72,11 @@ def run() -> None:
             body=handler(request)
         except Exception as error:
             print(f"[{addr}] handler error: {error!r}")
-            status = "500 Internal Server Error"
-            error_body = f"<h1>{status}</h1>".encode("latin-1")
-            error_headers = f"HTTP/1.1 {status}\r\n"
-            error_headers += "Content-Type: text/html\r\n"
-            error_headers += f"Content-Length: {len(error_body)}\r\n"
-            error_headers += "Connection: close\r\n"
-            error_headers += "\r\n"
-            client_socket.sendall(error_headers.encode("latin-1") + error_body)
-            client_socket.close()
+            send(client_socket, error_response("500 Internal Server Error"))
             return
 
-        headers = "HTTP/1.1 200 OK\r\n"
-        headers += "Content-Type: text/html\r\n"
-        headers += f"Content-Length: {len(body)}\r\n"
-        headers += "Connection: close\r\n"
-        headers += "\r\n"
+        send(client_socket, Response("200 OK", body))
 
-        response = headers.encode("latin-1") + body.encode("latin-1")
-
-        client_socket.sendall(response)
-        client_socket.close()
-            
     server_socket=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     host= "127.0.0.1"
     port=8080
