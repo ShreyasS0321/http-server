@@ -1,9 +1,19 @@
 import socket
 import threading
 
-
-def main() -> None:
+handlers={}
+path_dict={}
+def add_route(path,method,function)->None:
     
+    handlers[(path,method)]=function
+    
+    if path not in path_dict:
+        path_dict[path]=set()
+    path_dict[path].add(method)
+    
+    
+def run() -> None:
+
     def handle_connection(client_socket,addr):
 
         buffer=b""
@@ -33,8 +43,25 @@ def main() -> None:
             return
 
         method, path, version = parts
-        print(f"[{addr}] method={method} path={path} version={version}")
+        
+        if (path,method ) not in handlers:
 
+            if path in path_dict:
+                status = "405 Method Not Allowed"
+            else:
+                status = "404 Not Found"
+
+            body = f"<h1>{status}</h1>".encode("latin-1")
+            headers = f"HTTP/1.1 {status}\r\n"
+            headers += "Content-Type: text/html\r\n"
+            headers += f"Content-Length: {len(body)}\r\n"
+            headers += "Connection: close\r\n"
+            headers += "\r\n"
+            response = headers.encode("latin-1") + body
+
+            client_socket.sendall(response)
+            client_socket.close()
+            return
         request_headers = {}
         for line in header_lines[1:]:
             name, sep, value = line.partition(b":")
@@ -45,15 +72,15 @@ def main() -> None:
 
         print(f"[{addr}] headers: {request_headers}")
         
-        body = b"<h1>Hello from my custom server!</h1>"
-
+        handler= handlers[(path,method)]
+        body=handler()
         headers = "HTTP/1.1 200 OK\r\n"
         headers += "Content-Type: text/html\r\n"
         headers += f"Content-Length: {len(body)}\r\n"
         headers += "Connection: close\r\n"
         headers += "\r\n"
 
-        response = headers.encode("latin-1") + body
+        response = headers.encode("latin-1") + body.encode("latin-1")
 
         client_socket.sendall(response)
         client_socket.close()
@@ -72,4 +99,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run()
