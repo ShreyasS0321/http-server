@@ -1,5 +1,6 @@
 import socket
 import threading
+from httpserver.request import Request
 
 handlers={}
 path_dict={}
@@ -73,8 +74,10 @@ def run() -> None:
         print(f"[{addr}] headers: {request_headers}")
         
         handler= handlers[(path,method)]
+        request = Request(method, path, request_headers, body_bytes)
+
         try:
-            body=handler()
+            body=handler(request)
         except Exception as error:
             print(f"[{addr}] handler error: {error!r}")
             status = "500 Internal Server Error"

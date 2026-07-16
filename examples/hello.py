@@ -1,15 +1,16 @@
 from httpserver.server import add_route, run
 
 
-def home():
+def home(request):
     return "<h1>Home</h1><p>Welcome to the custom HTTP server.</p>"
 
 
-def hello():
-    return "<h1>Hello</h1>"
+def hello(request):
+    agent = request.headers.get("user-agent", "unknown")
+    return f"<h1>Hello</h1><p>You asked for {request.path} using {agent}.</p>"
 
 
-def about():
+def about(request):
     return "<h1>About</h1><p>Built from scratch on raw TCP sockets, no framework.</p>"
 
 
