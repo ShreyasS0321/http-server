@@ -73,7 +73,21 @@ def run() -> None:
         print(f"[{addr}] headers: {request_headers}")
         
         handler= handlers[(path,method)]
-        body=handler()
+        try:
+            body=handler()
+        except Exception as error:
+            print(f"[{addr}] handler error: {error!r}")
+            status = "500 Internal Server Error"
+            error_body = f"<h1>{status}</h1>".encode("latin-1")
+            error_headers = f"HTTP/1.1 {status}\r\n"
+            error_headers += "Content-Type: text/html\r\n"
+            error_headers += f"Content-Length: {len(error_body)}\r\n"
+            error_headers += "Connection: close\r\n"
+            error_headers += "\r\n"
+            client_socket.sendall(error_headers.encode("latin-1") + error_body)
+            client_socket.close()
+            return
+
         headers = "HTTP/1.1 200 OK\r\n"
         headers += "Content-Type: text/html\r\n"
         headers += f"Content-Length: {len(body)}\r\n"
