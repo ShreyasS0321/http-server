@@ -6,8 +6,9 @@ def home(request):
 
 
 def hello(request):
+    name = request.query_params.get("name", "stranger")
     agent = request.headers.get("user-agent", "unknown")
-    return f"<h1>Hello</h1><p>You asked for {request.path} using {agent}.</p>"
+    return f"<h1>Hello {name}</h1><p>You asked for {request.path} using {agent}.</p>"
 
 
 def about(request):

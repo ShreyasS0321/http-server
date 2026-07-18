@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass,field
 
 
 @dataclass(slots=True)
@@ -8,6 +8,7 @@ class Request:
     path:str
     headers:dict
     body:bytes
+    query_params: dict = field(default_factory=dict)
     
     
     

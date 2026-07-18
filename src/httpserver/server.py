@@ -2,7 +2,7 @@ import socket
 import threading
 from httpserver.request import Request
 from httpserver.response import Response
-
+from urllib import parse
 handlers={}
 path_dict={}
 def add_route(path,method,function)->None:
@@ -46,8 +46,17 @@ def run() -> None:
             send(client_socket, error_response("400 Bad Request"))
             return
 
-        method, path, version = parts
+        method, full_path, version = parts
 
+        if "?" in full_path:
+            path, query_string = full_path.split("?", 1)
+            
+            query_params = dict(parse.parse_qsl(query_string))
+            
+        else:
+            path = full_path
+            query_params = {}
+     
         if (path,method) not in handlers:
             if path in path_dict:
                 send(client_socket, error_response("405 Method Not Allowed"))
@@ -65,8 +74,9 @@ def run() -> None:
 
         print(f"[{addr}] headers: {request_headers}")
 
+        
         handler= handlers[(path,method)]
-        request = Request(method, path, request_headers, body_bytes)
+        request = Request(method, path, request_headers, body_bytes,query_params)
 
         try:
             body=handler(request)
