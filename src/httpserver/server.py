@@ -15,7 +15,7 @@ def error_response(status):
     return Response(status, f"<h1>{status}</h1>")
 
 
-def run() -> None:
+def run(host="127.0.0.1", port=8080) -> None:
 
     def handle_connection(client_socket,addr):
 
@@ -80,8 +80,6 @@ def run() -> None:
         send(client_socket, Response("200 OK", body))
 
     server_socket=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-    host= "127.0.0.1"
-    port=8080
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind((host, port))
     server_socket.listen()

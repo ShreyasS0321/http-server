@@ -80,14 +80,14 @@ async def handle_connection(reader, writer):
     await send(writer, Response("200 OK", body))
 
 
-async def _serve():
-    server = await asyncio.start_server(handle_connection, "127.0.0.1", 8080)
+async def _serve(host, port):
+    server = await asyncio.start_server(handle_connection, host, port)
     async with server:
         await server.serve_forever()
 
 
-def run():
-    asyncio.run(_serve())
+def run(host="127.0.0.1", port=8080):
+    asyncio.run(_serve(host, port))
 
 
 if __name__ == "__main__":
