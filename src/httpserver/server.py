@@ -3,15 +3,7 @@ import threading
 from httpserver.request import Request
 from httpserver.response import Response
 from urllib import parse
-handlers={}
-path_dict={}
-def add_route(path,method,function)->None:
-
-    handlers[(path,method)]=function
-
-    if path not in path_dict:
-        path_dict[path]=set()
-    path_dict[path].add(method)
+from httpserver.router import handlers, path_dict
 
 
 def send(client_socket, response):

@@ -1,4 +1,5 @@
-from httpserver.server import add_route, run
+from httpserver.router import add_route
+from httpserver.server import run
 
 
 def home(request):
